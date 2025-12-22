@@ -1,0 +1,8 @@
+name: agar_coco
+images_dir: /path/to/images_dir
+train_json: /path/to/train.json
+val_json: /path/to/val.json
+num_workers: 8
+batch_size: 4
+pin_memory: true
+persistent_workers: true

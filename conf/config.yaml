@@ -1,0 +1,8 @@
+defaults:
+  - data: agar
+  - model: fasterrcnn
+  - train: default
+  - eval: default
+  - _self_
+
+seed: 42

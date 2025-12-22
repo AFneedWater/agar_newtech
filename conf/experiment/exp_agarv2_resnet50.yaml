@@ -1,0 +1,21 @@
+defaults:
+  - override /data: agar
+  - override /model: fasterrcnn
+  - override /train: default
+  - _self_
+
+data:
+  images_dir: /abs/path/to/AGAR/images
+  train_json: /abs/path/to/AGAR/annotations/train.json
+  val_json: /abs/path/to/AGAR/annotations/val.json
+  batch_size: 4
+  num_workers: 8
+
+model:
+  num_classes: 7
+
+train:
+  epochs: 30
+  lr: 0.005
+  precision: "16-mixed"
+  mlflow: false
