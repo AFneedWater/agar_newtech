@@ -1,3 +1,5 @@
+# @package _global_
+
 defaults:
   - override /data: agar
   - override /model: fasterrcnn

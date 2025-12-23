@@ -60,6 +60,7 @@ class COCODetectionDataset(torch.utils.data.Dataset):
         file_name = info["file_name"]
 
         img = self._load_image(file_name)
+        img_w, img_h = img.size
 
         anns = self.ann_by_image.get(image_id, [])
         boxes = []
@@ -73,12 +74,16 @@ class COCODetectionDataset(torch.utils.data.Dataset):
                 pass
             bbox = ann["bbox"]
             xyxy = self._xywh_to_xyxy(bbox)
-            # filter invalid
-            if xyxy[2] <= xyxy[0] or xyxy[3] <= xyxy[1]:
+            x1 = max(0.0, float(xyxy[0]))
+            y1 = max(0.0, float(xyxy[1]))
+            x2 = min(float(img_w), float(xyxy[2]))
+            y2 = min(float(img_h), float(xyxy[3]))
+            # filter invalid after clip
+            if x2 <= x1 or y2 <= y1:
                 continue
-            boxes.append(xyxy)
+            boxes.append([x1, y1, x2, y2])
             labels.append(self.cat_id_to_label.get(int(ann["category_id"]), 1))
-            areas.append(float(ann.get("area", bbox[2] * bbox[3])))
+            areas.append(float((x2 - x1) * (y2 - y1)))
             iscrowd.append(int(ann.get("iscrowd", 0)))
 
         if len(boxes) == 0:

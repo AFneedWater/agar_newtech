@@ -3,6 +3,7 @@ defaults:
   - model: fasterrcnn
   - train: default
   - eval: default
+  - experiment: exp_agar_lower_from_coco_cache
   - _self_
 
 seed: 42

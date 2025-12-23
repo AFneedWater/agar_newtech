@@ -1,0 +1,14 @@
+# @package _global_
+
+defaults:
+  - exp_agar_lower_from_coco_cache
+  - _self_
+
+data:
+  batch_size: 16
+  num_workers: 16
+
+train:
+  epochs: 1
+  log_every: 10
+  eval_every: 1

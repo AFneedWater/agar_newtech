@@ -4,10 +4,16 @@ weight_decay: 0.0005
 momentum: 0.9
 
 precision: "16-mixed"   # "32-true" / "16-mixed" / "bf16-mixed"
+accelerator: "cuda"
+devices: 1
+strategy: "auto"
+strict_launch: false
 grad_accum_steps: 1
 log_every: 20
 eval_every: 1
 save_every: 1
+max_steps: -1
+profile_first_batch: true
 
 mlflow: false
 mlflow_tracking_uri: ""

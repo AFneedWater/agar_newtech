@@ -8,10 +8,20 @@ def build_model(cfg):
     name = cfg.model.name
     num_fg = int(cfg.model.num_classes)
     num_classes = num_fg + 1  # + background
+    pretrained = bool(getattr(cfg.model, "pretrained", False))
+    weights_cfg = getattr(cfg.model, "weights", None)
 
     if name == "fasterrcnn_resnet50_fpn_v2":
+        weights = None
+        weights_backbone = None
+        if pretrained:
+            weights = weights_cfg or "DEFAULT"
+            if num_classes != 91:
+                weights = None
+                weights_backbone = "DEFAULT"
         model = torchvision.models.detection.fasterrcnn_resnet50_fpn_v2(
-            weights="DEFAULT" if bool(cfg.model.pretrained) else None,
+            weights=weights,
+            weights_backbone=weights_backbone,
             num_classes=num_classes,
         )
     else:
