@@ -8,7 +8,9 @@ from lightning_fabric import Fabric
 import torch
 from torch.utils.data import DataLoader, Dataset
 
-torch.set_float32_matmul_precision("high")
+from .utils.tf32 import configure_tf32
+
+configure_tf32(enable=True)
 
 from .data.datamodule import build_dataloaders, detection_collate
 from .models.factory import build_model

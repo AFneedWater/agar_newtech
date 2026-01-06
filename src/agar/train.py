@@ -9,7 +9,9 @@ from lightning_fabric import Fabric
 import numpy as np
 import torch
 
-torch.set_float32_matmul_precision("high")
+from .utils.tf32 import configure_tf32
+
+configure_tf32(enable=True)
 
 from .utils.seed import set_seed
 from .data.datamodule import build_dataloaders

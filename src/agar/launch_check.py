@@ -5,7 +5,9 @@ import hydra
 from lightning_fabric import Fabric
 import torch
 
-torch.set_float32_matmul_precision("high")
+from .utils.tf32 import configure_tf32
+
+configure_tf32(enable=True)
 
 from .utils.distributed import align_cfg_for_torchrun, torchrun_env
 from .utils.launch import is_torchrun_env, log_launch_info, log_prelaunch_info, resolve_accelerator

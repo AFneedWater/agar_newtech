@@ -7,17 +7,17 @@ defaults:
   - _self_
 
 data:
-  images_dir: /abs/path/to/AGAR/images
-  train_json: /abs/path/to/AGAR/annotations/train.json
-  val_json: /abs/path/to/AGAR/annotations/val.json
-  batch_size: 4
+  images_dir: /home/gh/dataset/loweragar/data
+  train_json: /home/gh/dataset/loweragar/coco_cache/agar_lower_coco/coco/train.json
+  val_json: /home/gh/dataset/loweragar/coco_cache/agar_lower_coco/coco/val.json
+  batch_size: 16
   num_workers: 8
 
 model:
   num_classes: 7
 
 train:
-  epochs: 30
+  epochs: 15
   lr: 0.005
   precision: "16-mixed"
   mlflow: false

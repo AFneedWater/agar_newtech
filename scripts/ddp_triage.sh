@@ -45,7 +45,12 @@ print("torch=", torch.__version__, "cuda=", torch.version.cuda, "cudnn=", torch.
 assert torch.cuda.is_available()
 print("device_count:", torch.cuda.device_count())
 print("device0:", torch.cuda.get_device_name(0))
-torch.set_float32_matmul_precision("high")
+try:
+    torch.backends.cuda.matmul.fp32_precision = "tf32"
+    torch.backends.cudnn.conv.fp32_precision = "tf32"
+except Exception:
+    torch.backends.cuda.matmul.allow_tf32 = True
+    torch.backends.cudnn.allow_tf32 = True
 torch.cuda.init()
 torch.cuda.synchronize()
 

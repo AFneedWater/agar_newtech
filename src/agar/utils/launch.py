@@ -69,4 +69,14 @@ def log_launch_info(fabric) -> None:
 
     if fabric.is_global_zero:
         log(f"torch.float32_matmul_precision={torch.get_float32_matmul_precision()}")
+        try:
+            log(f"cuda.matmul.fp32_precision={torch.backends.cuda.matmul.fp32_precision}")
+        except Exception:
+            if hasattr(torch.backends.cuda.matmul, "allow_tf32"):
+                log(f"cuda.matmul.allow_tf32={torch.backends.cuda.matmul.allow_tf32}")
+        try:
+            log(f"cudnn.conv.fp32_precision={torch.backends.cudnn.conv.fp32_precision}")
+        except Exception:
+            if hasattr(torch.backends.cudnn, "allow_tf32"):
+                log(f"cudnn.allow_tf32={torch.backends.cudnn.allow_tf32}")
         log(f"cuda.device_count={torch.cuda.device_count()}")
