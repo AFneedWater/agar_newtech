@@ -68,7 +68,6 @@ def log_launch_info(fabric) -> None:
     )
 
     if fabric.is_global_zero:
-        log(f"torch.float32_matmul_precision={torch.get_float32_matmul_precision()}")
         try:
             log(f"cuda.matmul.fp32_precision={torch.backends.cuda.matmul.fp32_precision}")
         except Exception:

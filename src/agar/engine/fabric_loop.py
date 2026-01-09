@@ -5,6 +5,8 @@ import torch
 from torchmetrics.detection.mean_ap import MeanAveragePrecision
 from tqdm import tqdm
 
+_CPU_EVAL_GROUP = None
+
 
 def _move_batch(fabric, images, targets):
     images = [fabric.to_device(img) for img in images]
@@ -20,8 +22,27 @@ def _move_batch(fabric, images, targets):
 @torch.no_grad()
 def evaluate(fabric, model, val_loader, return_per_class: bool = False) -> Dict[str, Any]:
     model.eval()
+    process_group = None
+    use_cpu_metric = True
+    if torch.distributed.is_available() and torch.distributed.is_initialized():
+        try:
+            backend = torch.distributed.get_backend()
+        except Exception:
+            backend = None
+        if backend == "nccl":
+            global _CPU_EVAL_GROUP
+            if _CPU_EVAL_GROUP is None:
+                try:
+                    _CPU_EVAL_GROUP = torch.distributed.new_group(backend="gloo")
+                except Exception:
+                    _CPU_EVAL_GROUP = False
+            if _CPU_EVAL_GROUP:
+                process_group = _CPU_EVAL_GROUP
+            else:
+                # Fallback to GPU metric state if gloo is unavailable.
+                use_cpu_metric = False
     try:
-        metric = MeanAveragePrecision()
+        metric = MeanAveragePrecision(process_group=process_group) if process_group else MeanAveragePrecision()
     except ModuleNotFoundError as exc:
         if fabric.is_global_zero:
             print(
@@ -33,13 +54,20 @@ def evaluate(fabric, model, val_loader, return_per_class: bool = False) -> Dict[
     for images, targets in tqdm(val_loader, desc="eval", disable=not fabric.is_global_zero):
         images, targets = _move_batch(fabric, images, targets)
         preds = model(images)  # list of dict
-        # move to cpu for torchmetrics
-        preds_cpu = [{k: v.detach().cpu() for k, v in p.items()} for p in preds]
-        t_cpu = [
-            {k: (v.detach().cpu() if torch.is_tensor(v) else v) for k, v in t.items()}
-            for t in targets
-        ]
-        metric.update(preds_cpu, t_cpu)
+        if use_cpu_metric:
+            # move to cpu for torchmetrics (uses gloo if available)
+            preds_eval = [{k: v.detach().cpu() for k, v in p.items()} for p in preds]
+            targets_eval = [
+                {k: (v.detach().cpu() if torch.is_tensor(v) else v) for k, v in t.items()}
+                for t in targets
+            ]
+        else:
+            preds_eval = [{k: v.detach() for k, v in p.items()} for p in preds]
+            targets_eval = [
+                {k: (v.detach() if torch.is_tensor(v) else v) for k, v in t.items()}
+                for t in targets
+            ]
+        metric.update(preds_eval, targets_eval)
     out = metric.compute()
     if return_per_class:
         metrics = {}
