@@ -55,6 +55,20 @@ python -m agar.train experiment=exp_quick_baseline data.batch_size=12
 python -m agar.train experiment=exp_tiny_steps
 ```
 
+## MLflow
+
+Default tracking uses SQLite to avoid the deprecated filesystem backend:
+
+```bash
+python -m agar.train experiment=exp_quick_baseline train.mlflow=true
+```
+
+Override the tracking URI if you want a different backend:
+
+```bash
+python -m agar.train experiment=exp_quick_baseline train.mlflow=true train.mlflow_tracking_uri=sqlite:////home/gh/mlflow.db
+```
+
 ## Running
 
 Unified entry (recommended):
