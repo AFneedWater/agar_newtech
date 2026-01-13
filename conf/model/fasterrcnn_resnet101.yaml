@@ -1,0 +1,4 @@
+name: fasterrcnn_resnet101_fpn
+pretrained: true
+# 这里填“前景类别数”（不含背景）。例如 7 类 -> 7
+num_classes: 7

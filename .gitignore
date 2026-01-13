@@ -1,6 +1,8 @@
 __pycache__/
 outputs/
+mlruns/
 tb/
 logs/
 checkpoints/
 agar.egg-info/
+mlflow.db

@@ -1,6 +1,9 @@
 from __future__ import annotations
 import torchvision
 
+from torchvision.models.detection import FasterRCNN
+from torchvision.models.detection.backbone_utils import resnet_fpn_backbone
+
 from .detector import DetectorWrapper
 
 
@@ -24,6 +27,12 @@ def build_model(cfg):
             weights_backbone=weights_backbone,
             num_classes=num_classes,
         )
+    elif name == "fasterrcnn_resnet101_fpn":
+        weights_backbone = None
+        if pretrained:
+            weights_backbone = weights_cfg or "DEFAULT"
+        backbone = resnet_fpn_backbone("resnet101", weights=weights_backbone)
+        model = FasterRCNN(backbone, num_classes=num_classes)
     else:
         raise ValueError(f"Unknown model name: {name}")
 

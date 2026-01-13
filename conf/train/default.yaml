@@ -8,7 +8,7 @@ accelerator: "cuda"
 devices: 1
 strategy: "auto"
 strict_launch: false
-grad_accum_steps: 1
+grad_accum_steps: 4
 log_every: 20
 eval_every: 1
 save_every: 1
@@ -16,7 +16,7 @@ max_steps: -1
 profile_first_batch: true
 
 mlflow: false
-mlflow_tracking_uri: "sqlite:////home/gh/mlflow.db"
+mlflow_tracking_uri: "sqlite:////home/gh/agar_project/mlflow.db"
 mlflow_experiment: "agar"
 mlflow_run_name: ""
 
