@@ -10,8 +10,8 @@ data:
   images_dir: /home/gh/dataset/loweragar/data
   train_json: /home/gh/dataset/loweragar/coco_cache/agar_lower_coco/coco/train.json
   val_json: /home/gh/dataset/loweragar/coco_cache/agar_lower_coco/coco/val.json
-  batch_size: 10
-  num_workers: 10
+  batch_size: 14
+  num_workers: 14
 
 model:
   num_classes: 7

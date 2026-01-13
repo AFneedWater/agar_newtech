@@ -8,7 +8,7 @@ accelerator: "cuda"
 devices: 1
 strategy: "auto"
 strict_launch: false
-grad_accum_steps: 4
+grad_accum_steps: 1
 log_every: 20
 eval_every: 1
 save_every: 1
