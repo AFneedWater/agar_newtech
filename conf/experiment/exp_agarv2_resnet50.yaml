@@ -20,4 +20,4 @@ train:
   epochs: 15
   lr: 0.005
   precision: "16-mixed"
-  mlflow: false
+  mlflow: True
