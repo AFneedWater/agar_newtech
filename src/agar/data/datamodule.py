@@ -3,6 +3,7 @@ from typing import Tuple
 from torch.utils.data import DataLoader
 
 from .agar_dataset import COCODetectionDataset
+from .coco_paths import resolve_coco_train_val
 from .transforms import Compose, RandomHorizontalFlip
 
 
@@ -17,14 +18,15 @@ def build_dataloaders(cfg) -> Tuple[DataLoader, DataLoader]:
     source = getattr(cfg.data, "source", "coco")
 
     if source == "coco":
+        train_paths, val_paths = resolve_coco_train_val(cfg.data)
         train_ds = COCODetectionDataset(
-            images_dir=cfg.data.images_dir,
-            ann_json=cfg.data.train_json,
+            image_root=str(train_paths.image_root),
+            ann_file=str(train_paths.ann_file),
             transforms=train_tf,
         )
         val_ds = COCODetectionDataset(
-            images_dir=cfg.data.images_dir,
-            ann_json=cfg.data.val_json,
+            image_root=str(val_paths.image_root),
+            ann_file=str(val_paths.ann_file),
             transforms=val_tf,
         )
     elif source == "fiftyone":

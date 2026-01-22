@@ -15,6 +15,7 @@ configure_tf32(enable=True)
 
 from .utils.seed import set_seed
 from .data.datamodule import build_dataloaders
+from .data.coco_paths import resolve_coco_train_val
 from .models.factory import build_model
 from .engine.fabric_loop import train as train_loop
 from .engine.callbacks import CheckpointCallback
@@ -93,15 +94,22 @@ def _compute_stats(json_path: str, classes: List[str] | None) -> Dict[str, Any]:
 
 def _log_data_stats(cfg, tb_logger, mlflow_logger) -> None:
     classes = _list_classes(cfg)
-    train_json = str(getattr(cfg.data, "train_json", ""))
-    val_json = str(getattr(cfg.data, "val_json", ""))
+    try:
+        train_paths, val_paths = resolve_coco_train_val(cfg.data)
+    except Exception:
+        train_paths = val_paths = None
 
-    if not (train_json and val_json and os.path.exists(train_json) and os.path.exists(val_json)):
+    if (
+        train_paths is None
+        or val_paths is None
+        or (not train_paths.ann_file.exists())
+        or (not val_paths.ann_file.exists())
+    ):
         log("Data stats skipped: train/val json not found")
         return
 
-    train_stats = _compute_stats(train_json, classes)
-    val_stats = _compute_stats(val_json, classes)
+    train_stats = _compute_stats(str(train_paths.ann_file), classes)
+    val_stats = _compute_stats(str(val_paths.ann_file), classes)
     stats = {"train": train_stats, "val": val_stats}
 
     log("Data stats:")

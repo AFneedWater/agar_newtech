@@ -1,34 +1,58 @@
 {
   "train": {
-    "images": 3544,
-    "annotations": 68581,
-    "categories": 1,
+    "images": 6339,
+    "annotations": 202763,
+    "categories": 7,
     "class_counts": {
-      "single_colony": 68581
+      "B.subtilis": 25978,
+      "S.aureus": 49490,
+      "C.albicans": 33921,
+      "P.aeruginosa": 44509,
+      "E.coli": 48253,
+      "Defect": 111,
+      "Contamination": 501
     },
     "area_quantiles": {
-      "p10": 841.0,
-      "p50": 7569.0,
-      "p90": 29241.0
+      "p10": 1369.0,
+      "p50": 9409.0,
+      "p90": 51984.0
     },
     "category_mapping": {
-      "1": "single_colony"
+      "1": "B.subtilis",
+      "2": "C.albicans",
+      "3": "Contamination",
+      "4": "Defect",
+      "5": "E.coli",
+      "6": "P.aeruginosa",
+      "7": "S.aureus"
     }
   },
   "val": {
-    "images": 887,
-    "annotations": 17895,
-    "categories": 1,
+    "images": 1510,
+    "annotations": 48378,
+    "categories": 7,
     "class_counts": {
-      "single_colony": 17895
+      "P.aeruginosa": 8918,
+      "B.subtilis": 6539,
+      "E.coli": 11470,
+      "C.albicans": 8451,
+      "S.aureus": 12843,
+      "Contamination": 133,
+      "Defect": 24
     },
     "area_quantiles": {
-      "p10": 784.0,
-      "p50": 7569.0,
-      "p90": 29241.0
+      "p10": 1369.0,
+      "p50": 8464.0,
+      "p90": 51984.0
     },
     "category_mapping": {
-      "1": "single_colony"
+      "1": "B.subtilis",
+      "2": "C.albicans",
+      "3": "Contamination",
+      "4": "Defect",
+      "5": "E.coli",
+      "6": "P.aeruginosa",
+      "7": "S.aureus"
     }
   }
 }

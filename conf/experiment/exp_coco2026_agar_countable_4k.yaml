@@ -1,0 +1,24 @@
+# @package _global_
+
+# AGAR COCO2026 dataset (countable_4k) exported in standard COCO layout:
+#   coco_root/
+#     annotations/instances_train2026.json
+#     annotations/instances_val2026.json
+#     train2026/*.jpg
+#     val2026/*.jpg
+
+data:
+  source: coco
+  coco_root: /home/gh/agar_dataset/outputs/coco2026/agar_countable_4k
+  train_ann: annotations/instances_train2026.json
+  val_ann: annotations/instances_val2026.json
+  train_images: train2026
+  val_images: val2026
+  batch_size: 8
+  num_workers: 8
+
+model:
+  num_classes: 7
+
+
+

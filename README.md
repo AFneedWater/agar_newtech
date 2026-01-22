@@ -31,10 +31,31 @@ python -m agar.data.fo_to_coco \
   --seed 42
 ```
 
-## Train from COCO cache
+## Train from standard COCO
 
 ```bash
 python -m agar.train experiment=exp_agar_lower_from_coco_cache
+```
+
+Data config now uses standard COCO-style inputs:
+
+- `data.train_ann` / `data.val_ann`: COCO annotation JSON(s)
+- `data.images_root`: image root that `file_name` is relative to
+- optional `data.coco_root`: base directory to resolve relative `*_ann` paths
+
+Example for your provided dataset:
+
+```bash
+python -m agar.train experiment=exp_agar7dataset_standard_coco
+python -m agar.train experiment=exp_coco2026_agar_countable_4k
+```
+
+## 2-GPU smoke (COCO2026 4k)
+
+Prefer `agar.run` for multi-GPU: it auto-launches `torchrun` when `train.devices>1` (including when set inside the experiment yaml).
+
+```bash
+CUDA_VISIBLE_DEVICES=0,1 python -m agar.run smoke experiment=exp_ddp_smoke_coco2026_agar_countable_4k
 ```
 
 ## Quick baseline (1 epoch)
@@ -76,6 +97,14 @@ Unified entry (recommended):
 ```bash
 CUDA_VISIBLE_DEVICES=0 python -m agar.run train experiment=exp_quick_baseline train.max_steps=5 train.eval_every=0
 ```
+
+COCO2026 4k (2 GPUs):
+
+```bash
+CUDA_VISIBLE_DEVICES=0,1 python -m agar.run train experiment=exp_coco2026_agar_countable_4k train.devices=2 train.max_steps=5 train.eval_every=0
+```
+
+Note: `train.mlflow=true` (not `ture`).
 
 Multi-GPU (auto torchrun via `scripts/run_ddp.sh`):
 

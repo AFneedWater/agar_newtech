@@ -1,0 +1,28 @@
+# @package _global_
+
+# 2-GPU DDP smoke for COCO2026 agar_countable_4k.
+# Run with:
+#   CUDA_VISIBLE_DEVICES=0,1 python -m agar.run smoke experiment=exp_ddp_smoke_coco2026_agar_countable_4k
+
+data:
+  source: coco
+  coco_root: /home/gh/agar_dataset/outputs/coco2026/agar_countable_4k
+  train_ann: annotations/instances_train2026.json
+  val_ann: annotations/instances_val2026.json
+  train_images: train2026
+  val_images: val2026
+  batch_size: 1
+  num_workers: 0
+  pin_memory: true
+  persistent_workers: false
+
+model:
+  num_classes: 7
+
+train:
+  accelerator: cuda
+  devices: 2
+  strategy: ddp
+  precision: "16-mixed"
+  strict_launch: true
+

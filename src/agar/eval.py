@@ -12,6 +12,7 @@ from .utils.tf32 import configure_tf32
 configure_tf32(enable=True)
 
 from .data.datamodule import build_dataloaders
+from .data.coco_paths import resolve_coco_split_paths
 from .models.factory import build_model
 from .engine.fabric_loop import evaluate
 from .utils.io import load_checkpoint
@@ -29,9 +30,13 @@ def _list_classes(cfg) -> List[str] | None:
 
 def _load_category_mapping(cfg) -> Dict[int, str]:
     classes = _list_classes(cfg)
-    val_json = str(getattr(cfg.data, "val_json", ""))
-    if val_json and os.path.exists(val_json):
-        with open(val_json, "r", encoding="utf-8") as f:
+    try:
+        val_paths = resolve_coco_split_paths(cfg.data, "val")
+    except Exception:
+        val_paths = None
+
+    if val_paths is not None and val_paths.ann_file.exists():
+        with open(val_paths.ann_file, "r", encoding="utf-8") as f:
             coco = json.load(f)
         categories = coco.get("categories", [])
         if categories and any("name" in c for c in categories):

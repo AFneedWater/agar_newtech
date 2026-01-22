@@ -11,19 +11,19 @@ class COCODetectionDataset(torch.utils.data.Dataset):
     """
     Minimal COCO detection dataset for torchvision detection models.
     Expects:
-      - images_dir: directory containing image files
-      - ann_json: COCO annotations json (bbox in xywh)
+      - image_root: root directory containing image files referenced by COCO's `file_name`
+      - ann_file: COCO annotations json (bbox in xywh)
     Produces:
       image: FloatTensor[C,H,W] in [0,1]
       target: dict with keys boxes (xyxy), labels, image_id, area, iscrowd
     """
 
-    def __init__(self, images_dir: str, ann_json: str, transforms=None):
-        self.images_dir = Path(images_dir)
-        self.ann_json = Path(ann_json)
+    def __init__(self, image_root: str, ann_file: str, transforms=None):
+        self.image_root = Path(image_root)
+        self.ann_file = Path(ann_file)
         self.transforms = transforms
 
-        with self.ann_json.open("r", encoding="utf-8") as f:
+        with self.ann_file.open("r", encoding="utf-8") as f:
             coco = json.load(f)
 
         self.images = coco["images"]
@@ -45,7 +45,8 @@ class COCODetectionDataset(torch.utils.data.Dataset):
         return len(self.images)
 
     def _load_image(self, file_name: str) -> Image.Image:
-        path = self.images_dir / file_name
+        p = Path(file_name)
+        path = p if p.is_absolute() else (self.image_root / p)
         img = Image.open(path).convert("RGB")
         return img
 

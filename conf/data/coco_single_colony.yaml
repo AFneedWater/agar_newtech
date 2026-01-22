@@ -1,8 +1,9 @@
 name: coco_single_colony
 source: coco
-images_dir: /path/to/images_dir
-train_json: /path/to/train.json
-val_json: /path/to/val.json
+coco_root: /path/to/coco_root
+images_root: train2017
+train_ann: annotations/train_single.json
+val_ann: annotations/val_single.json
 num_workers: 8
 batch_size: 4
 pin_memory: true

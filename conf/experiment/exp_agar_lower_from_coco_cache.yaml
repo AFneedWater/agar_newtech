@@ -2,9 +2,10 @@
 
 data:
   source: coco
-  images_dir: /home/gh/dataset/loweragar/data
-  train_json: /home/gh/dataset/loweragar/coco_cache/agar_lower_coco/coco/train.json
-  val_json: /home/gh/dataset/loweragar/coco_cache/agar_lower_coco/coco/val.json
+  coco_root: /home/gh/dataset/loweragar/coco_cache/agar_lower_coco
+  images_root: /home/gh/dataset/loweragar/data
+  train_ann: coco/train.json
+  val_ann: coco/val.json
   batch_size: 4
   num_workers: 8
 

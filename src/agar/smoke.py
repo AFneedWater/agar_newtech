@@ -13,6 +13,7 @@ from .utils.tf32 import configure_tf32
 configure_tf32(enable=True)
 
 from .data.datamodule import build_dataloaders, detection_collate
+from .data.coco_paths import resolve_coco_train_val
 from .models.factory import build_model
 from .utils.distributed import align_cfg_for_torchrun, torchrun_env
 from .utils.launch import is_torchrun_env, log_launch_info, log_prelaunch_info, resolve_accelerator
@@ -40,15 +41,15 @@ class DummyDetectionDataset(Dataset):
 
 
 def _has_real_data(cfg) -> bool:
-    train_json = str(getattr(cfg.data, "train_json", ""))
-    val_json = str(getattr(cfg.data, "val_json", ""))
-    images_dir = str(getattr(cfg.data, "images_dir", ""))
-    if not (train_json and val_json and images_dir):
+    try:
+        train_paths, val_paths = resolve_coco_train_val(cfg.data)
+    except Exception:
         return False
     return bool(
-        os.path.exists(train_json)
-        and os.path.exists(val_json)
-        and os.path.isdir(images_dir)
+        train_paths.ann_file.exists()
+        and val_paths.ann_file.exists()
+        and train_paths.image_root.is_dir()
+        and val_paths.image_root.is_dir()
     )
 
 

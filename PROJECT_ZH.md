@@ -77,23 +77,24 @@ python -c "from torchmetrics.detection.mean_ap import MeanAveragePrecision; Mean
 
 ---
 
-## 3. 数据工作流（COCO cache 为中心）
+## 3. 数据工作流（标准 COCO 为中心）
 
 本项目训练当前以 `data.source: coco` 为主；FiftyOne 仅作为“离线导出 COCO cache”的工具链存在。
 
-### 3.1 COCO cache 的最小要求
+### 3.1 标准 COCO 的最小要求
 
 你需要提供：
-- `data.images_dir`：图片根目录（训练时会用 `file_name` 拼接到该目录下）。
-- `data.train_json`：COCO train 标注 JSON。
-- `data.val_json`：COCO val 标注 JSON。
+- `data.images_root`：图片根目录（训练时会用 COCO 的 `file_name` 拼接到该目录下；`file_name` 也可以是绝对路径）。
+- `data.train_ann`：COCO train 标注 JSON（标准 COCO 格式）。
+- `data.val_ann`：COCO val 标注 JSON（可选；不填则默认复用 `train_ann`）。
+- （可选）`data.coco_root`：当 `train_ann/val_ann/images_root` 写相对路径时，用它作为 base 进行解析。
 
 并确保标注满足 torchvision detection 任务需求（dataset 会输出）：
 - `target["boxes"]`: `FloatTensor[N,4]`，xyxy
 - `target["labels"]`: `LongTensor[N]`
 - 允许 `N=0`（无框图像）
 
-### 3.2 从 FiftyOne 导出 COCO cache
+### 3.2 从 FiftyOne 导出 COCO（可选）
 
 示例（随机拆分，不写 tag）：
 
@@ -116,7 +117,7 @@ python -m agar.data.fo_to_coco \
 - `--copy-images false` 时必须提供 `--image-root`，导出的 `file_name` 会是相对 `image-root` 的路径。
 - `--copy-images true` 会在 `out_dir/images/` 下 hardlink（失败则 copy）一份图片（便于可移植，但占空间）。
 
-### 3.3 检查 COCO cache（强烈建议）
+### 3.3 检查 COCO 标注（强烈建议）
 
 ```bash
 python -m agar.data.inspect_coco \
@@ -194,6 +195,20 @@ CUDA_VISIBLE_DEVICES=0 python -m agar.run train experiment=exp_quick_baseline tr
 ```bash
 CUDA_VISIBLE_DEVICES=0,1 python -m agar.run train experiment=exp_ddp_smoke train.devices=2 train.max_steps=5 train.eval_every=0
 ```
+
+COCO2026 4k 数据集（两卡冒烟 smoke）：
+
+```bash
+CUDA_VISIBLE_DEVICES=0,1 python -m agar.run smoke experiment=exp_ddp_smoke_coco2026_agar_countable_4k
+```
+
+COCO2026 4k 数据集（两卡训练最小步数，验证并行是否正常）：
+
+```bash
+CUDA_VISIBLE_DEVICES=0,1 python -m agar.run train experiment=exp_coco2026_agar_countable_4k train.devices=2 train.max_steps=5 train.eval_every=0
+```
+
+注意：`train.mlflow=true`（不是 `ture`）。
 
 ### 5.3 直接 torchrun（可选）
 
@@ -299,4 +314,3 @@ ruff check .
 
 - `src/agar/predict.py` 目前是占位：批量推理与可视化尚未实现。
 - `data.source: fiftyone` 的在线 dataloader 目前未实现（当前推荐 FO -> COCO cache 的离线导出方式）。
-

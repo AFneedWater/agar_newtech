@@ -33,6 +33,29 @@ def parse_train_devices(overrides: List[str], default: int = 1) -> int:
     return default
 
 
+def _infer_train_devices_from_hydra(overrides: List[str], default: int = 1) -> int:
+    """
+    Infer train.devices from composed Hydra config when it is not explicitly overridden.
+
+    This lets users set train.devices inside an experiment yaml and still have `agar.run`
+    auto-launch torchrun without requiring an extra CLI override.
+    """
+
+    try:
+        from hydra import compose, initialize_config_dir
+        from omegaconf import OmegaConf
+    except Exception:
+        return default
+
+    try:
+        with initialize_config_dir(config_dir=str(_repo_root() / "conf"), version_base="1.3"):
+            cfg = compose(config_name="config", overrides=overrides)
+        devices = OmegaConf.select(cfg, "train.devices")
+        return int(devices) if devices is not None else default
+    except Exception:
+        return default
+
+
 def _find_override(overrides: List[str], key: str) -> Optional[str]:
     for arg in overrides:
         kv = _parse_kv_override(arg)
@@ -99,6 +122,8 @@ def main(argv: List[str] | None = None) -> None:
         _exec([sys.executable, "-m", module, *overrides])
 
     devices = parse_train_devices(overrides, default=1)
+    if _find_override(overrides, "train.devices") is None:
+        devices = _infer_train_devices_from_hydra(overrides, default=devices)
     if devices <= 1:
         _exec([sys.executable, "-m", module, *overrides])
 
@@ -124,4 +149,3 @@ def main(argv: List[str] | None = None) -> None:
 
 if __name__ == "__main__":
     main()
-
