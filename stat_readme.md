@@ -2,7 +2,9 @@
 
 ---
 
-## 阶段 1：把真实 AGAR 数据接进训练流水线（以 FiftyOne 为数据源）
+## 阶段 1：把真实 AGAR 数据接进训练流水线（历史记录）
+
+注：当前项目已统一以标准 COCO 数据作为输入，不再走 FiftyOne 导出流程；本文件保留为历史复盘。
 
 ### 1) 阶段目标
 
@@ -22,13 +24,6 @@
    * 转为像素级 xyxy
    * label 用 `class_to_idx` 映射到 int 类别
    * 无框时输出 `zeros((0,4))` 和 `zeros((0,))`
-
-2. **尝试在导出脚本 fo_to_coco 中使用 train/val tag 视图**
-
-   * 使用：
-
-     * `--train-view "tag:train"`
-     * `--val-view "tag:val"`
 
 ### 3) 遇到的关键问题
 

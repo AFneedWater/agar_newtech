@@ -14,8 +14,8 @@ data:
   val_ann: annotations/instances_val2026.json
   train_images: train2026
   val_images: val2026
-  batch_size: 8
-  num_workers: 8
+  batch_size: 16
+  num_workers: 16
 
 model:
   num_classes: 7

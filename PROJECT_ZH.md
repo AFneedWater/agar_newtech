@@ -21,7 +21,6 @@
   - `data/`
     - `datamodule.py`：根据 `cfg.data.source` 构建 dataloaders（当前实现为 `coco`）。
     - `agar_dataset.py`：COCO detection dataset（返回 torchvision detection contract）。
-    - `fo_to_coco.py`：从 FiftyOne 数据集导出 COCO cache（可随机拆分或按 view/tag 拆分）。
     - `inspect_coco.py`：检查 COCO JSON 质量（数量、抽样 bbox、越界比例、分布等）。
   - `tools/`
     - `ddp_sanity.py`：最小 DDP/collective 检查（gloo/nccl）。
@@ -53,7 +52,7 @@
 pip install -e . -U
 ```
 
-也可以用 `requirements.txt` 安装一组固定版本（包含 `torch/torchvision/torchaudio` 与 `fiftyone`）。
+也可以用 `requirements.txt` 安装一组固定版本。
 
 ### 2.2 COCO mAP 评估依赖（强烈建议）
 
@@ -79,7 +78,7 @@ python -c "from torchmetrics.detection.mean_ap import MeanAveragePrecision; Mean
 
 ## 3. 数据工作流（标准 COCO 为中心）
 
-本项目训练当前以 `data.source: coco` 为主；FiftyOne 仅作为“离线导出 COCO cache”的工具链存在。
+本项目训练以 `data.source: coco` 为主。
 
 ### 3.1 标准 COCO 的最小要求
 
@@ -94,30 +93,7 @@ python -c "from torchmetrics.detection.mean_ap import MeanAveragePrecision; Mean
 - `target["labels"]`: `LongTensor[N]`
 - 允许 `N=0`（无框图像）
 
-### 3.2 从 FiftyOne 导出 COCO（可选）
-
-示例（随机拆分，不写 tag）：
-
-```bash
-python -m agar.data.fo_to_coco \
-  --fo-dataset AGARlower \
-  --label-field detections \
-  --train-view "" \
-  --val-view "" \
-  --out-dir /abs/path/to/coco_cache/agar_lower_coco \
-  --copy-images false \
-  --image-root /abs/path/to/images_root \
-  --classes "E.coli,S.aureus,P.aeruginosa,C.albicans,B.subtilis,Contamination,Defect" \
-  --split-method random \
-  --train-ratio 0.8 \
-  --seed 42
-```
-
-注意：
-- `--copy-images false` 时必须提供 `--image-root`，导出的 `file_name` 会是相对 `image-root` 的路径。
-- `--copy-images true` 会在 `out_dir/images/` 下 hardlink（失败则 copy）一份图片（便于可移植，但占空间）。
-
-### 3.3 检查 COCO 标注（强烈建议）
+### 3.2 检查 COCO 标注（强烈建议）
 
 ```bash
 python -m agar.data.inspect_coco \

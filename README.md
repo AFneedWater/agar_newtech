@@ -11,24 +11,7 @@ pip install -e . -U
 ## Quick checks
 
 ```bash
-python -m py_compile $(git ls-files '*.py')
-```
-
-## Export FiftyOne dataset to COCO cache (random split, no tag writes)
-
-```bash
-python -m agar.data.fo_to_coco \
-  --fo-dataset AGARlower \
-  --label-field detections \
-  --train-view "" \
-  --val-view "" \
-  --out-dir /home/gh/dataset/loweragar/coco_cache/agar_lower_coco \
-  --copy-images false \
-  --image-root /home/gh/dataset/loweragar/data \
-  --classes "E.coli,S.aureus,P.aeruginosa,C.albicans,B.subtilis,Contamination,Defect" \
-  --split-method random \
-  --train-ratio 0.8 \
-  --seed 42
+python -m compileall -q src tests
 ```
 
 ## Train from standard COCO

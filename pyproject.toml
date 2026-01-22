@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "agar"
 version = "0.1.0"
-description = "AGAR colony detection project (Hydra + Fabric + MLflow + FiftyOne-ready)"
+description = "AGAR colony detection project (Hydra + Fabric + MLflow)"
 requires-python = ">=3.11"
 dependencies = [
   "torchmetrics>=1.4.0",
