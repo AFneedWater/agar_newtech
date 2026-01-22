@@ -1,0 +1,22 @@
+# @package _global_
+
+defaults:
+  - override /data: coco_single_colony
+  - override /model: fasterrcnn
+  - override /train: default
+  - _self_
+
+data:
+  images_dir: /home/gh/dataset/loweragar/data
+  train_json: /home/gh/dataset/loweragar/coco_cache/agar_lower_coco/coco_stage1/train_single.json
+  val_json: /home/gh/dataset/loweragar/coco_cache/agar_lower_coco/coco_stage1/val_single.json
+  batch_size: 16
+  num_workers: 16
+
+model:
+  num_classes: 1
+
+train:
+  epochs: 15
+  lr: 0.005
+  precision: "16-mixed"
