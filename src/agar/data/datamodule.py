@@ -17,17 +17,21 @@ def build_dataloaders(cfg) -> Tuple[DataLoader, DataLoader]:
     val_tf = None
     source = getattr(cfg.data, "source", "coco")
 
+    resize_max_size = getattr(cfg.data, "resize_max_size", 1024)
+
     if source == "coco":
         train_paths, val_paths = resolve_coco_train_val(cfg.data)
         train_ds = COCODetectionDataset(
             image_root=str(train_paths.image_root),
             ann_file=str(train_paths.ann_file),
             transforms=train_tf,
+            resize_max_size=resize_max_size,
         )
         val_ds = COCODetectionDataset(
             image_root=str(val_paths.image_root),
             ann_file=str(val_paths.ann_file),
             transforms=val_tf,
+            resize_max_size=resize_max_size,
         )
     elif source == "fiftyone":
         raise NotImplementedError("FiftyOne-backed dataloader is not implemented in this stage.")

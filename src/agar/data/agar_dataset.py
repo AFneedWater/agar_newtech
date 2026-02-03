@@ -20,10 +20,23 @@ class COCODetectionDataset(torch.utils.data.Dataset):
       target: dict with keys boxes (xyxy), labels, image_id, area, iscrowd
     """
 
-    def __init__(self, image_root: str, ann_file: str, transforms=None):
+    def __init__(
+        self,
+        image_root: str,
+        ann_file: str,
+        transforms=None,
+        resize_max_size: int | None = 1024,
+    ):
         self.image_root = Path(image_root)
         self.ann_file = Path(ann_file)
         self.transforms = transforms
+        self.resize_max_size = resize_max_size
+        self._resize = None
+        if self.resize_max_size is not None:
+            self._resize = A.Compose(
+                [A.LongestMaxSize(max_size=int(self.resize_max_size))],
+                bbox_params=A.BboxParams(format="pascal_voc", label_fields=["labels", "iscrowd"]),
+            )
 
         with self.ann_file.open("r", encoding="utf-8") as f:
             coco = json.load(f)
@@ -90,20 +103,16 @@ class COCODetectionDataset(torch.utils.data.Dataset):
             iscrowd.append(int(ann.get("iscrowd", 0)))
 
         # Resize on CPU before tensor conversion to reduce RAM/transfer cost.
-        # Keep aspect ratio: longest side -> 1024.
-        resize = A.Compose(
-            [A.LongestMaxSize(max_size=1024)],
-            bbox_params=A.BboxParams(format="pascal_voc", label_fields=["labels", "iscrowd"]),
-        )
         img_np = np.array(img)
-        if len(boxes) > 0:
-            resized = resize(image=img_np, bboxes=boxes, labels=labels, iscrowd=iscrowd)
-            img_np = resized["image"]
-            boxes = resized["bboxes"]
-            labels = resized["labels"]
-            iscrowd = resized["iscrowd"]
-        else:
-            img_np = resize(image=img_np)["image"]
+        if self._resize is not None:
+            if len(boxes) > 0:
+                resized = self._resize(image=img_np, bboxes=boxes, labels=labels, iscrowd=iscrowd)
+                img_np = resized["image"]
+                boxes = resized["bboxes"]
+                labels = resized["labels"]
+                iscrowd = resized["iscrowd"]
+            else:
+                img_np = self._resize(image=img_np)["image"]
 
         if len(boxes) == 0:
             boxes_t = torch.zeros((0, 4), dtype=torch.float32)
