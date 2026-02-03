@@ -3,6 +3,8 @@ import json
 from pathlib import Path
 from typing import Any, Dict, List, Tuple
 
+import albumentations as A
+import numpy as np
 import torch
 from PIL import Image
 
@@ -87,6 +89,22 @@ class COCODetectionDataset(torch.utils.data.Dataset):
             areas.append(float((x2 - x1) * (y2 - y1)))
             iscrowd.append(int(ann.get("iscrowd", 0)))
 
+        # Resize on CPU before tensor conversion to reduce RAM/transfer cost.
+        # Keep aspect ratio: longest side -> 1024.
+        resize = A.Compose(
+            [A.LongestMaxSize(max_size=1024)],
+            bbox_params=A.BboxParams(format="pascal_voc", label_fields=["labels", "iscrowd"]),
+        )
+        img_np = np.array(img)
+        if len(boxes) > 0:
+            resized = resize(image=img_np, bboxes=boxes, labels=labels, iscrowd=iscrowd)
+            img_np = resized["image"]
+            boxes = resized["bboxes"]
+            labels = resized["labels"]
+            iscrowd = resized["iscrowd"]
+        else:
+            img_np = resize(image=img_np)["image"]
+
         if len(boxes) == 0:
             boxes_t = torch.zeros((0, 4), dtype=torch.float32)
             labels_t = torch.zeros((0,), dtype=torch.int64)
@@ -95,11 +113,11 @@ class COCODetectionDataset(torch.utils.data.Dataset):
         else:
             boxes_t = torch.tensor(boxes, dtype=torch.float32)
             labels_t = torch.tensor(labels, dtype=torch.int64)
-            areas_t = torch.tensor(areas, dtype=torch.float32)
             iscrowd_t = torch.tensor(iscrowd, dtype=torch.int64)
+            areas_t = (boxes_t[:, 2] - boxes_t[:, 0]) * (boxes_t[:, 3] - boxes_t[:, 1])
 
-        # basic to tensor
-        img_t = torch.from_numpy(__import__("numpy").array(img)).permute(2, 0, 1).float() / 255.0
+        # to tensor after resize
+        img_t = torch.from_numpy(img_np).permute(2, 0, 1).float() / 255.0
 
         target: Dict[str, Any] = {
             "boxes": boxes_t,

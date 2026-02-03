@@ -9,13 +9,13 @@
 
 data:
   source: coco
-  coco_root: /home/gh/agar_dataset/outputs/coco2026/agar_countable_4k
+  coco_root: /work/home/zqy_885225/gh/do_dataset/outputs/agar7dataset/agar_countable_4k
   train_ann: annotations/instances_train2026.json
   val_ann: annotations/instances_val2026.json
   train_images: train2026
   val_images: val2026
   batch_size: 16
-  num_workers: 16
+  num_workers: 8
 
 model:
   num_classes: 7

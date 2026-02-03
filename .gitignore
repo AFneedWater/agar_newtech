@@ -6,3 +6,6 @@ logs/
 checkpoints/
 agar.egg-info/
 mlflow.db
+train*.err
+train*.log
+mlflow*
