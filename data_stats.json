@@ -54,5 +54,9 @@
       "6": "P.aeruginosa",
       "7": "S.aureus"
     }
+  },
+  "fingerprints": {
+    "train_ann_sha256": "2b49ca75dc27c39da93f0fe060960ca3f291fabd4be913ab9427950dc44b92a3",
+    "val_ann_sha256": "ad4044a8ab4a13039329355418b1c2d8fcb53113877bbcc2bf993bc6e13b2ade"
   }
 }

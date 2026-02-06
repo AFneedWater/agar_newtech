@@ -1,4 +1,4 @@
-epochs: 20
+epochs: 12
 lr: 0.005
 weight_decay: 0.0005
 momentum: 0.9
@@ -19,5 +19,11 @@ mlflow: false
 mlflow_tracking_uri: "sqlite:////work/home/zqy_885225/gh/agar/mlflow.db"
 mlflow_experiment: "agar"
 mlflow_run_name: ""
+mlflow_description: ""
+mlflow_tags: {}
+mlflow_log_config: true
+mlflow_log_checkpoints: true
+mlflow_log_checkpoints_best_only: false
+mlflow_log_data_fingerprint: true
 
 tensorboard: true

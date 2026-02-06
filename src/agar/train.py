@@ -1,7 +1,11 @@
 from __future__ import annotations
 import json
 import os
-from typing import Any, Dict, List
+import hashlib
+import subprocess
+import time
+from pathlib import Path
+from typing import Any, Dict, List, Optional, Tuple
 
 import hydra
 from omegaconf import OmegaConf
@@ -40,6 +44,102 @@ def _list_classes(cfg) -> List[str] | None:
 def _load_coco_json(path: str) -> Dict[str, Any]:
     with open(path, "r", encoding="utf-8") as f:
         return json.load(f)
+
+
+def _file_sha256(path: str) -> str:
+    hasher = hashlib.sha256()
+    with open(path, "rb") as f:
+        for chunk in iter(lambda: f.read(1024 * 1024), b""):
+            hasher.update(chunk)
+    return hasher.hexdigest()
+
+
+def _find_repo_root(start: Path) -> Optional[Path]:
+    cur = start
+    for _ in range(8):
+        if (cur / ".git").exists():
+            return cur
+        if cur.parent == cur:
+            break
+        cur = cur.parent
+    return None
+
+
+def _git_sha_short() -> str:
+    repo_root = _find_repo_root(Path(__file__).resolve())
+    if repo_root is None:
+        return ""
+    try:
+        out = subprocess.check_output(
+            ["git", "-C", str(repo_root), "rev-parse", "--short", "HEAD"],
+            stderr=subprocess.DEVNULL,
+        )
+        return out.decode("utf-8").strip()
+    except Exception:
+        return ""
+
+
+def _fmt_float(value: Any) -> str:
+    try:
+        return f"{float(value):.6g}"
+    except Exception:
+        return str(value)
+
+
+def _make_run_name(cfg, git_sha: str) -> str:
+    model = str(getattr(cfg.model, "name", "model"))
+    data = str(getattr(cfg.data, "name", "data"))
+    img = str(getattr(cfg.data, "resize_max_size", "na"))
+    bs = str(getattr(cfg.data, "batch_size", "na"))
+    lr = _fmt_float(getattr(cfg.train, "lr", "na"))
+    seed = str(getattr(cfg, "seed", "na"))
+    ts = time.strftime("%Y%m%d-%H%M%S")
+
+    parts = [model, data, f"img{img}", f"bs{bs}", f"lr{lr}", f"seed{seed}"]
+    if git_sha:
+        parts.append(git_sha)
+    parts.append(ts)
+    name = "-".join(parts)
+    name = name.replace("/", "-").replace(" ", "")
+    return name[:200]
+
+
+def _collect_mlflow_params(cfg) -> Dict[str, Any]:
+    return {
+        "model_name": getattr(cfg.model, "name", ""),
+        "model_num_classes": getattr(cfg.model, "num_classes", ""),
+        "data_name": getattr(cfg.data, "name", ""),
+        "data_source": getattr(cfg.data, "source", ""),
+        "data_resize_max_size": getattr(cfg.data, "resize_max_size", ""),
+        "data_batch_size": getattr(cfg.data, "batch_size", ""),
+        "data_num_workers": getattr(cfg.data, "num_workers", ""),
+        "data_train_ann": getattr(cfg.data, "train_ann", ""),
+        "data_val_ann": getattr(cfg.data, "val_ann", ""),
+        "train_lr": getattr(cfg.train, "lr", ""),
+        "train_weight_decay": getattr(cfg.train, "weight_decay", ""),
+        "train_momentum": getattr(cfg.train, "momentum", ""),
+        "train_epochs": getattr(cfg.train, "epochs", ""),
+        "train_precision": getattr(cfg.train, "precision", ""),
+        "train_devices": getattr(cfg.train, "devices", ""),
+        "train_strategy": getattr(cfg.train, "strategy", ""),
+        "train_grad_accum_steps": getattr(cfg.train, "grad_accum_steps", ""),
+        "train_max_steps": getattr(cfg.train, "max_steps", ""),
+        "seed": getattr(cfg, "seed", ""),
+        "eval_metric_key": getattr(cfg.eval, "metric_key", ""),
+    }
+
+
+def _collect_mlflow_tags(cfg, git_sha: str, data_fingerprints: Optional[Dict[str, str]]) -> Dict[str, Any]:
+    tags: Dict[str, Any] = {
+        "stage": "train",
+        "git_sha": git_sha,
+    }
+    if data_fingerprints and bool(getattr(cfg.train, "mlflow_log_data_fingerprint", True)):
+        tags.update({f"data_fingerprint_{k}": v for k, v in data_fingerprints.items() if v})
+    extra = getattr(cfg.train, "mlflow_tags", None) or {}
+    if isinstance(extra, dict):
+        tags.update(extra)
+    return tags
 
 
 def _build_category_mapping(
@@ -92,7 +192,7 @@ def _compute_stats(json_path: str, classes: List[str] | None) -> Dict[str, Any]:
     }
 
 
-def _log_data_stats(cfg, tb_logger, mlflow_logger) -> None:
+def _log_data_stats(cfg, tb_logger, mlflow_logger) -> Tuple[Optional[str], Optional[Dict[str, str]]]:
     classes = _list_classes(cfg)
     try:
         train_paths, val_paths = resolve_coco_train_val(cfg.data)
@@ -106,17 +206,24 @@ def _log_data_stats(cfg, tb_logger, mlflow_logger) -> None:
         or (not val_paths.ann_file.exists())
     ):
         log("Data stats skipped: train/val json not found")
-        return
+        return None, None
 
     train_stats = _compute_stats(str(train_paths.ann_file), classes)
     val_stats = _compute_stats(str(val_paths.ann_file), classes)
-    stats = {"train": train_stats, "val": val_stats}
+    fingerprints = {
+        "train_ann_sha256": _file_sha256(str(train_paths.ann_file)),
+        "val_ann_sha256": _file_sha256(str(val_paths.ann_file)),
+    }
+    stats = {"train": train_stats, "val": val_stats, "fingerprints": fingerprints}
 
     log("Data stats:")
     log(json.dumps(stats, ensure_ascii=True, indent=2))
 
     if tb_logger:
-        for split, split_stats in stats.items():
+        for split in ("train", "val"):
+            split_stats = stats.get(split)
+            if not isinstance(split_stats, dict):
+                continue
             metrics = {
                 "images": split_stats["images"],
                 "annotations": split_stats["annotations"],
@@ -134,6 +241,7 @@ def _log_data_stats(cfg, tb_logger, mlflow_logger) -> None:
         json.dump(stats, f, ensure_ascii=True, indent=2)
     if mlflow_logger:
         mlflow_logger.log_artifact(stats_path)
+    return stats_path, fingerprints
 
 
 @hydra.main(config_path="../../conf", config_name="config", version_base="1.3")
@@ -212,20 +320,37 @@ def main(cfg):
         tb_logger = TBLogger(log_dir=os.path.join(os.getcwd(), "tb"))
 
     mlflow_logger = None
+    git_sha = _git_sha_short()
     if bool(cfg.train.mlflow) and fabric.is_global_zero:
+        run_name = str(cfg.train.mlflow_run_name).strip()
+        if not run_name:
+            run_name = _make_run_name(cfg, git_sha)
         mlflow_logger = MLflowLogger(
             tracking_uri=str(cfg.train.mlflow_tracking_uri),
             experiment=str(cfg.train.mlflow_experiment),
-            run_name=str(cfg.train.mlflow_run_name),
+            run_name=run_name,
         )
-        mlflow_logger.log_params({"config": OmegaConf.to_yaml(cfg)})
+        mlflow_logger.log_params(_collect_mlflow_params(cfg))
+        if getattr(cfg.train, "mlflow_description", "").strip():
+            mlflow_logger.set_tag("mlflow.note.content", str(cfg.train.mlflow_description))
 
     ckpt_cb = CheckpointCallback(out_dir=os.path.join(os.getcwd(), "checkpoints"), monitor=str(cfg.eval.metric_key))
 
+    data_stats_path = None
+    data_fingerprints = None
     if fabric.is_global_zero:
         log(f"Output dir: {os.getcwd()}")
         log(OmegaConf.to_yaml(cfg))
-        _log_data_stats(cfg, tb_logger, mlflow_logger)
+        data_stats_path, data_fingerprints = _log_data_stats(cfg, tb_logger, mlflow_logger)
+        if mlflow_logger:
+            tags = _collect_mlflow_tags(cfg, git_sha, data_fingerprints)
+            mlflow_logger.set_tags(tags)
+            if bool(getattr(cfg.train, "mlflow_log_config", True)):
+                hydra_dir = os.path.join(os.getcwd(), ".hydra")
+                for name in ("config.yaml", "overrides.yaml", "hydra.yaml"):
+                    path = os.path.join(hydra_dir, name)
+                    if os.path.exists(path):
+                        mlflow_logger.log_artifact(path)
 
     out = train_loop(
         fabric=fabric,
@@ -242,6 +367,15 @@ def main(cfg):
     if tb_logger:
         tb_logger.close()
     if mlflow_logger:
+        if bool(getattr(cfg.train, "mlflow_log_checkpoints", True)):
+            ckpt_dir = Path(os.getcwd()) / "checkpoints"
+            best_path = ckpt_dir / "checkpoint_best.pt"
+            last_path = ckpt_dir / "checkpoint_last.pt"
+            log_best_only = bool(getattr(cfg.train, "mlflow_log_checkpoints_best_only", False))
+            if best_path.exists():
+                mlflow_logger.log_artifact(str(best_path))
+            if (not log_best_only) and last_path.exists():
+                mlflow_logger.log_artifact(str(last_path))
         mlflow_logger.close()
 
     if fabric.is_global_zero:

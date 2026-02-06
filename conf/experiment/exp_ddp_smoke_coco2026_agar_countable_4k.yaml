@@ -14,7 +14,7 @@ data:
   batch_size: 1
   num_workers: 0
   pin_memory: true
-  persistent_workers: false
+  persistent_workers: true
 
 model:
   num_classes: 7

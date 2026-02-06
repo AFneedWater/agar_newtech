@@ -112,7 +112,8 @@ class COCODetectionDataset(torch.utils.data.Dataset):
                 labels = resized["labels"]
                 iscrowd = resized["iscrowd"]
             else:
-                img_np = self._resize(image=img_np)["image"]
+                resized = self._resize(image=img_np, bboxes=[], labels=[], iscrowd=[])
+                img_np = resized["image"]
 
         if len(boxes) == 0:
             boxes_t = torch.zeros((0, 4), dtype=torch.float32)

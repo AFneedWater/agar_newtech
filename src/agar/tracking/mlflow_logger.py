@@ -1,5 +1,5 @@
 from __future__ import annotations
-from typing import Dict, Any
+from typing import Dict, Any, Optional
 import mlflow
 
 
@@ -18,6 +18,14 @@ class MLflowLogger:
 
     def log_artifact(self, path: str) -> None:
         mlflow.log_artifact(path)
+
+    def set_tags(self, tags: Dict[str, Any]) -> None:
+        mlflow.set_tags({k: str(v) for k, v in tags.items()})
+
+    def set_tag(self, key: str, value: Optional[Any]) -> None:
+        if value is None:
+            return
+        mlflow.set_tag(str(key), str(value))
 
     def close(self) -> None:
         mlflow.end_run()
